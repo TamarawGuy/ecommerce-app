@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { healthRouter } from "./routes/health.routes.js";
+import { categoriesRouter } from "./routes/categories.routes.js";
 
 export function createApp() {
   const app = express();
@@ -9,6 +10,7 @@ export function createApp() {
   app.use(express.json());
 
   app.use("/health", healthRouter);
+  app.use("/categories", categoriesRouter);
 
   // Fallback 404
   app.use((_req, res) => {
