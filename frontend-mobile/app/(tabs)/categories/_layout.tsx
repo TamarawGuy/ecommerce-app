@@ -21,11 +21,13 @@ export default function CategoriesStackLayout() {
         headerTitleStyle: { color: c.text },
         headerShadowVisible: false,
         contentStyle: { backgroundColor: c.bg },
+        headerBackButtonDisplayMode: "minimal",
       }}
     >
       <Stack.Screen name="index" options={{ title: "Categories" }} />
-      {/* Title is set dynamically by the screen from the category name. */}
+      {/* Titles are set dynamically by each screen (category / product name). */}
       <Stack.Screen name="[id]" options={{ title: "" }} />
+      <Stack.Screen name="product/[id]" options={{ title: "" }} />
     </Stack>
   );
 }

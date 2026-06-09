@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 
+import { ProductList } from "@/src/components/ProductList";
 import { useCategories } from "@/src/hooks/useCategories";
 import {
   buildTree,
@@ -84,15 +85,9 @@ export function CategoryBrowser({ categoryId }: { categoryId?: number }) {
       {node && <Stack.Screen options={{ title: node.name }} />}
 
       {isLeaf ? (
-        <View className="flex-1 items-center justify-center px-8">
-          <Ionicons name="pricetags-outline" size={44} color={c.muted} />
-          <Text className="mt-4 text-center text-lg font-semibold text-foreground">
-            {node!.name}
-          </Text>
-          <Text className="mt-1 text-center text-sm text-muted">
-            Products in this category are coming soon.
-          </Text>
-        </View>
+        // A leaf category: show its products. `descendantLeafIds` resolves to just
+        // this node, so the list queries exactly this category.
+        <ProductList tree={tree} categoryId={node!.id} />
       ) : (
         <FlatList
           data={children}
