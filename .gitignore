@@ -1,51 +1,24 @@
-##############
-## Frontend ##
-##############
+# Repo-wide ignores only.
+# App-specific build artifacts live in each subproject's own .gitignore:
+#   - frontend-mobile/.gitignore  (Expo/Metro/native — tool-managed)
+#   - backend/.gitignore          (Node/dist/logs)
 
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+# Claude Code local config
+.claude
 
-# dependencies
+# Dependencies (safety net; each app also ignores its own)
 node_modules/
 
-# Expo
-.expo/
-dist/
-web-build/
-expo-env.d.ts
+# Local env files — secrets are never committed
+.env
+.env*.local
 
-# Native
-.kotlin/
-*.orig.*
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
-
-# Metro
-.metro-health-check*
-
-# debug
-npm-debug.*
-yarn-debug.*
-yarn-error.*
-
-# macOS
+# OS / editor
 .DS_Store
 *.pem
 
-# local env files
-.env*.local
-
-# typescript
-*.tsbuildinfo
-
-app-example
-
-# generated native folders
-/ios
-/android
-
-##############
-## Backend ##
-##############
+# Logs
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
