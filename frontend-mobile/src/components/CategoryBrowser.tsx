@@ -36,7 +36,7 @@ const chrome = {
 export function CategoryBrowser({ categoryId }: { categoryId?: number }) {
   const scheme = useColorScheme() === "dark" ? "dark" : "light";
   const c = chrome[scheme];
-  const { data, isLoading, isError, refetch, isRefetching } = useCategories();
+  const { data, isLoading, isError, refetch } = useCategories();
 
   const tree = useMemo(() => buildTree(data ?? []), [data]);
   const node = categoryId != null ? findNode(tree, categoryId) : undefined;
@@ -98,8 +98,6 @@ export function CategoryBrowser({ categoryId }: { categoryId?: number }) {
           data={children}
           keyExtractor={(n) => String(n.id)}
           contentContainerStyle={{ padding: 16, gap: 12 }}
-          refreshing={isRefetching}
-          onRefresh={refetch}
           renderItem={({ item }) => <CategoryCard node={item} mutedColor={c.muted} />}
         />
       )}
