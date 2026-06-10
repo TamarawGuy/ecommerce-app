@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { apiFetch } from "../lib/api";
 import type { Variant } from "../lib/variant-resolver";
@@ -24,23 +24,69 @@ export interface ProductDetail {
   variants: Variant[];
 }
 
+/** Sort orders supported by `GET /products` (mirrors the backend). */
+export type ProductSort = "featured" | "price_asc" | "price_desc" | "newest";
+
 /**
- * Lists products under a set of leaf categories. The caller resolves a tapped
- * category to its descendant leaf ids (see the `category-tree` module) and passes
- * them here. The key is the sorted id list so the same leaves hit one cache
- * entry; the query is disabled until there is at least one id.
+ * Discovery query for `GET /products`. Every field is optional; an empty query
+ * returns the whole catalog, featured-first. Prices are integer **cents**.
  */
-export function useProducts(categoryIds: number[]) {
-  const sorted = [...categoryIds].sort((a, b) => a - b);
+export interface ProductQuery {
+  /** Leaf category ids (resolved from a tapped category via the tree). */
+  categoryIds?: number[];
+  q?: string;
+  sort?: ProductSort;
+  minPriceCents?: number;
+  maxPriceCents?: number;
+  inStock?: boolean;
+}
+
+/**
+ * Serializes a {@link ProductQuery} into a canonical querystring. `categoryIds`
+ * is sorted and the default `featured` sort is omitted so equivalent queries map
+ * to the same string — which also makes it a stable TanStack Query cache key.
+ */
+function buildProductSearch(query: ProductQuery): string {
+  const params = new URLSearchParams();
+  if (query.categoryIds?.length) {
+    params.set(
+      "categoryIds",
+      [...query.categoryIds].sort((a, b) => a - b).join(",")
+    );
+  }
+  const q = query.q?.trim();
+  if (q) params.set("q", q);
+  if (query.sort && query.sort !== "featured") params.set("sort", query.sort);
+  if (query.minPriceCents != null)
+    params.set("minPrice", String(query.minPriceCents));
+  if (query.maxPriceCents != null)
+    params.set("maxPrice", String(query.maxPriceCents));
+  if (query.inStock) params.set("inStock", "true");
+  const s = params.toString();
+  return s ? `?${s}` : "";
+}
+
+/**
+ * Lists products for discovery (Home rails, search, filter, sort) and category
+ * browse. Pass any combination of search/filter/sort; the server computes the
+ * per-product aggregates so cards render without an N+1. Previous results are
+ * kept while the next query loads, so typing in search doesn't flash empty.
+ *
+ * `opts.enabled` gates the request (e.g. disable the results query while the
+ * Home screen is showing its curated rails).
+ */
+export function useProducts(
+  query: ProductQuery,
+  opts?: { enabled?: boolean }
+) {
+  const search = buildProductSearch(query);
   return useQuery({
-    queryKey: ["products", sorted],
+    queryKey: ["products", search],
     queryFn: async () =>
-      (
-        await apiFetch<{ products: ProductListItem[] }>(
-          `/products?categoryIds=${sorted.join(",")}`
-        )
-      ).products,
-    enabled: sorted.length > 0,
+      (await apiFetch<{ products: ProductListItem[] }>(`/products${search}`))
+        .products,
+    enabled: opts?.enabled ?? true,
+    placeholderData: keepPreviousData,
   });
 }
 

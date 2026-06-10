@@ -1,5 +1,6 @@
 // Drizzle schema — tables are introduced per vertical slice.
 // #4 adds `categories`; #5 adds `products`/`variants`, etc.
+import { sql } from "drizzle-orm";
 import {
   type AnyPgColumn,
   boolean,
@@ -56,7 +57,17 @@ export const products = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (t) => [index("products_category_id_idx").on(t.categoryId)]
+  (t) => [
+    index("products_category_id_idx").on(t.categoryId),
+    // Fuzzy search (`?q=`) matches name/description by substring or trigram
+    // similarity; a GIN trigram index accelerates both ILIKE and the `%`
+    // operator. Requires the `pg_trgm` extension (created in the migration).
+    index("products_search_trgm_idx").using(
+      "gin",
+      sql`${t.name} gin_trgm_ops`,
+      sql`${t.description} gin_trgm_ops`
+    ),
+  ]
 );
 
 /**

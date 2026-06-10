@@ -15,6 +15,13 @@
       "when": 1781036705341,
       "tag": "0001_wooden_lockheed",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781091880216,
+      "tag": "0002_wandering_revanche",
+      "breakpoints": true
     }
   ]
 }
