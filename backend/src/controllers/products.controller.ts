@@ -1,24 +1,15 @@
 import type { Request, Response } from "express";
 
+import { parseProductQuery } from "../lib/product-query.js";
 import {
   getProduct,
   listProducts,
 } from "../services/products.service.js";
 
-/** Parses a `?categoryIds=1,2,3` query into a list of positive integers. */
-function parseCategoryIds(raw: unknown): number[] | undefined {
-  if (typeof raw !== "string" || raw.trim() === "") return undefined;
-  const ids = raw
-    .split(",")
-    .map((s) => Number(s.trim()))
-    .filter((n) => Number.isInteger(n) && n > 0);
-  return ids.length ? ids : undefined;
-}
-
 export async function getProducts(req: Request, res: Response): Promise<void> {
   try {
-    const categoryIds = parseCategoryIds(req.query.categoryIds);
-    const items = await listProducts(categoryIds);
+    const query = parseProductQuery(req.query as Record<string, unknown>);
+    const items = await listProducts(query);
     res.status(200).json({ products: items });
   } catch (err) {
     res.status(500).json({
