@@ -2,6 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { useColorScheme } from "react-native";
 
+import { useCart } from "@/src/context/CartContext";
+
 // Navigation chrome needs raw color values (not Tailwind classes), so we mirror
 // the design tokens here and pick by system scheme to stay in sync with theming.
 const chrome = {
@@ -22,6 +24,7 @@ const chrome = {
 export default function TabsLayout() {
   const scheme = useColorScheme() ?? "light";
   const c = chrome[scheme === "dark" ? "dark" : "light"];
+  const { count } = useCart();
 
   return (
     <Tabs
@@ -66,6 +69,7 @@ export default function TabsLayout() {
         name="cart"
         options={{
           title: "Cart",
+          tabBarBadge: count > 0 ? count : undefined,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="cart-outline" color={color} size={size} />
           ),

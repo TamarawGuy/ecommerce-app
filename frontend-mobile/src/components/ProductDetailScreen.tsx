@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { Stack, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 
+import { useCart } from "@/src/context/CartContext";
 import { useProduct } from "@/src/hooks/useProducts";
 import { formatPrice } from "@/src/lib/format";
 import { sizedImage } from "@/src/lib/images";
@@ -37,10 +38,21 @@ export function ProductDetailScreen() {
   const scheme = useColorScheme() === "dark" ? "dark" : "light";
   const c = chrome[scheme];
 
+  const { addItem } = useCart();
+
   const { data: product, isLoading, isError, refetch } = useProduct(Number(id));
   // In-progress {size, color} selection. A single-variant product collapses and
   // ignores this; multi-variant products resolve once every dimension is chosen.
   const [selection, setSelection] = useState<Selection>({});
+  // Brief "Added" confirmation on the CTA after a successful add-to-cart.
+  const [justAdded, setJustAdded] = useState(false);
+  const addedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (addedTimer.current) clearTimeout(addedTimer.current);
+    },
+    []
+  );
 
   if (isLoading) {
     return (
@@ -81,17 +93,36 @@ export function ProductDetailScreen() {
   const needsChoice =
     (resolved.hasSize && resolved.selectedSize === null) ||
     (resolved.hasColor && resolved.selectedColorName === null);
-  const ctaLabel = ready
-    ? "Add to cart"
-    : needsChoice
-      ? "Select options"
-      : resolved.variant == null
-        ? "Unavailable"
-        : "Out of stock";
+  const ctaLabel = justAdded
+    ? "Added to cart"
+    : ready
+      ? "Add to cart"
+      : needsChoice
+        ? "Select options"
+        : resolved.variant == null
+          ? "Unavailable"
+          : "Out of stock";
 
   function addToCart() {
-    // Cart wiring lands in a later slice; for now confirm the tap feels good.
+    const variant = resolved.variant;
+    if (!variant || variant.stock <= 0) return;
+
+    addItem({
+      variantId: variant.id,
+      productId: product!.id,
+      name: product!.name,
+      size: variant.size,
+      colorName: variant.colorName,
+      colorHex: variant.colorHex,
+      unitPriceCents: variant.priceCents,
+      imageUrl: variant.imageUrl,
+    });
+
+    // Instant feedback: a success haptic plus a transient label change on the CTA.
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setJustAdded(true);
+    if (addedTimer.current) clearTimeout(addedTimer.current);
+    addedTimer.current = setTimeout(() => setJustAdded(false), 1400);
   }
 
   return (
@@ -152,12 +183,20 @@ export function ProductDetailScreen() {
           disabled={!ready}
           onPress={addToCart}
           className={`items-center rounded-2xl py-4 ${
-            ready ? "bg-primary active:opacity-80" : "bg-border"
+            justAdded
+              ? "bg-success"
+              : ready
+                ? "bg-primary active:opacity-80"
+                : "bg-border"
           }`}
         >
           <Text
             className={`text-base font-semibold ${
-              ready ? "text-primary-foreground" : "text-muted"
+              justAdded
+                ? "text-white"
+                : ready
+                  ? "text-primary-foreground"
+                  : "text-muted"
             }`}
           >
             {ctaLabel}
