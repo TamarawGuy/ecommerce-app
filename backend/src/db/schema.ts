@@ -10,6 +10,7 @@ import {
   serial,
   text,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 /**
@@ -121,3 +122,41 @@ export const users = pgTable(
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+
+/**
+ * Server-side wishlist for signed-in users. Guests keep a device-local list that
+ * is union-merged into this table on first login. Like cart and order items, a
+ * wishlist row references a **variant** (never a bare product) so every flow has
+ * one code path. The unique `(user_id, variant_id)` index makes the data model
+ * do the de-duping for us: a repeated add — or a merge that re-sends a variant
+ * already saved — is a no-op via `onConflictDoNothing`, so merge-on-login is a
+ * true union with no duplicates. That composite index also serves the
+ * by-user listing (its leftmost column is `user_id`), so no separate index is
+ * needed.
+ *
+ * `user_id` is the **Clerk** user id taken from the verified session JWT, which
+ * is authoritative on its own — so there is deliberately **no** foreign key to
+ * the local `users` mirror. That mirror is populated asynchronously by the Clerk
+ * webhook (and may lag a freshly signed-up user, or be unreachable in dev), and
+ * the rest of the app already treats it as eventual (see `me` returning
+ * `synced: false`). Gating wishlist writes on the mirror row existing would make
+ * "save to wishlist" fail during the sign-up → first-action race; keying on the
+ * JWT subject instead keeps it working immediately. The `variant_id` FK stays —
+ * variants are seeded and always present.
+ */
+export const wishlistItems = pgTable(
+  "wishlist_items",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    variantId: integer("variant_id")
+      .notNull()
+      .references((): AnyPgColumn => variants.id, { onDelete: "cascade" }),
+  },
+  (t) => [
+    uniqueIndex("wishlist_items_user_variant_uq").on(t.userId, t.variantId),
+  ]
+);
+
+export type WishlistItem = typeof wishlistItems.$inferSelect;
+export type NewWishlistItem = typeof wishlistItems.$inferInsert;

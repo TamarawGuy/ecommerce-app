@@ -11,6 +11,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { CartProvider } from "@/src/context/CartContext";
 import { ThemeProvider } from "@/src/context/ThemeContext";
+import { WishlistProvider } from "@/src/context/WishlistContext";
 import { queryClient } from "@/src/lib/queryClient";
 
 // Completes the OAuth web-browser session when control returns to the app after
@@ -33,18 +34,20 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <ThemeProvider>
             <CartProvider>
-              <SafeAreaProvider>
-                <StatusBar style="auto" />
-                <Stack screenOptions={{ headerShown: false }}>
-                  <Stack.Screen name="(tabs)" />
-                  {/* Auth is presented on demand, never a gate — a modal stack
-                      pushed over whatever the shopper was doing. */}
-                  <Stack.Screen
-                    name="(auth)"
-                    options={{ presentation: "modal" }}
-                  />
-                </Stack>
-              </SafeAreaProvider>
+              <WishlistProvider>
+                <SafeAreaProvider>
+                  <StatusBar style="auto" />
+                  <Stack screenOptions={{ headerShown: false }}>
+                    <Stack.Screen name="(tabs)" />
+                    {/* Auth is presented on demand, never a gate — a modal stack
+                        pushed over whatever the shopper was doing. */}
+                    <Stack.Screen
+                      name="(auth)"
+                      options={{ presentation: "modal" }}
+                    />
+                  </Stack>
+                </SafeAreaProvider>
+              </WishlistProvider>
             </CartProvider>
           </ThemeProvider>
         </QueryClientProvider>
