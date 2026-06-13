@@ -45,6 +45,9 @@ export default function RootLayout() {
                       name="(auth)"
                       options={{ presentation: "modal" }}
                     />
+                    {/* Saved-addresses flow, pushed from the Profile tab. Its
+                        own stack renders the header (list + add/edit form). */}
+                    <Stack.Screen name="addresses" />
                   </Stack>
                 </SafeAreaProvider>
               </WishlistProvider>
