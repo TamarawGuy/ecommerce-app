@@ -17,6 +17,15 @@ const envSchema = z.object({
   // URL). Until then the server boots fine; the /webhooks/clerk route returns a
   // clear error if it receives a delivery without this secret configured.
   CLERK_WEBHOOK_SIGNING_SECRET: z.string().optional(),
+  // Stripe — the secret key authorizes PaymentIntent creation and is required
+  // for checkout to work.
+  STRIPE_SECRET_KEY: z
+    .string()
+    .min(1, "STRIPE_SECRET_KEY is required (see backend/.env.example)"),
+  // Optional: the webhook signing secret comes from the Stripe CLI in dev
+  // (`stripe listen`) or the dashboard in prod. The server boots without it; the
+  // /webhooks/stripe route returns 503 until it is set.
+  STRIPE_WEBHOOK_SIGNING_SECRET: z.string().optional(),
   PORT: z.coerce.number().int().positive().default(4000),
   NODE_ENV: z
     .enum(["development", "production", "test"])

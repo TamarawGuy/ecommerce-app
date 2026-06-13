@@ -43,6 +43,13 @@
       "when": 1781361495030,
       "tag": "0005_spicy_green_goblin",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1781385121382,
+      "tag": "0006_shallow_white_queen",
+      "breakpoints": true
     }
   ]
 }
