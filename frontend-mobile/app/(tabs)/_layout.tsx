@@ -62,7 +62,8 @@ export default function TabsLayout() {
         name="wishlist"
         options={{
           title: "Wishlist",
-          tabBarBadge: wishlistItems.length > 0 ? wishlistItems.length : undefined,
+          tabBarBadge:
+            wishlistItems.length > 0 ? wishlistItems.length : undefined,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="heart-outline" color={color} size={size} />
           ),

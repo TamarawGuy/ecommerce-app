@@ -3,7 +3,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemeToggle } from "@/src/components/ThemeToggle";
@@ -56,6 +63,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function AccountCard() {
   const { user } = useUser();
   const { signOut } = useClerk();
+  const router = useRouter();
+  const colors = useColors();
   const [signingOut, setSigningOut] = useState(false);
 
   const email = user?.primaryEmailAddress?.emailAddress ?? "";
@@ -107,6 +116,18 @@ function AccountCard() {
           ) : null}
         </View>
       </View>
+
+      <Pressable
+        onPress={() => router.push("/addresses")}
+        accessibilityRole="button"
+        className="flex-row items-center gap-3 rounded-2xl border border-border bg-card p-4 active:opacity-80"
+      >
+        <Ionicons name="location-outline" size={20} color={colors.foreground} />
+        <Text className="flex-1 text-base font-medium text-foreground">
+          Saved addresses
+        </Text>
+        <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+      </Pressable>
 
       <Button
         label="Sign out"

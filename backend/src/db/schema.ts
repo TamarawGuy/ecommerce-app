@@ -160,3 +160,46 @@ export const wishlistItems = pgTable(
 
 export type WishlistItem = typeof wishlistItems.$inferSelect;
 export type NewWishlistItem = typeof wishlistItems.$inferInsert;
+
+/**
+ * Saved shipping addresses for signed-in users. Like the wishlist, `user_id` is
+ * the **Clerk** user id from the verified session JWT — authoritative on its own
+ * — so there is deliberately **no** foreign key to the local `users` mirror
+ * (which is populated asynchronously by the webhook and may lag or be absent in
+ * dev). Every read/write is scoped by `user_id`, so a user only ever sees and
+ * mutates their own rows.
+ *
+ * `line2` and `phone` are optional; the rest of the postal fields are required.
+ * `isDefault` carries the "exactly one default" invariant: at most one row per
+ * user is default at a time, enforced in a row-locked transaction by the service
+ * (set-default unsets the previous). A partial unique index makes the database
+ * the final backstop — at most one `is_default = true` row can exist per user.
+ */
+export const addresses = pgTable(
+  "addresses",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    name: text("name").notNull(),
+    line1: text("line1").notNull(),
+    line2: text("line2"),
+    city: text("city").notNull(),
+    state: text("state").notNull(),
+    postal: text("postal").notNull(),
+    country: text("country").notNull(),
+    phone: text("phone"),
+    isDefault: boolean("is_default").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("addresses_user_id_idx").on(t.userId),
+    uniqueIndex("addresses_one_default_per_user_uq")
+      .on(t.userId)
+      .where(sql`${t.isDefault}`),
+  ]
+);
+
+export type Address = typeof addresses.$inferSelect;
+export type NewAddress = typeof addresses.$inferInsert;

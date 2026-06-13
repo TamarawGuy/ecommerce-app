@@ -32,7 +32,10 @@ export function FormTextField<T extends FieldValues>({
     <Controller
       control={control}
       name={name}
-      render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+      render={({
+        field: { onChange, onBlur, value },
+        fieldState: { error },
+      }) => (
         <View className="gap-1.5">
           <Text className="text-sm font-medium text-foreground">{label}</Text>
           <TextInput
@@ -41,7 +44,7 @@ export function FormTextField<T extends FieldValues>({
             onBlur={onBlur}
             placeholderTextColor={colors.muted}
             selectionColor={colors.primary}
-            className={`rounded-xl border bg-card px-4 py-3.5 text-base text-foreground ${
+            className={`rounded-xl border bg-card px-3.5 py-3.5 text-foreground ${
               error ? "border-danger" : "border-border"
             }`}
             {...inputProps}
