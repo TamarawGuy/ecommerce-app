@@ -27,12 +27,16 @@ export const API_BASE_URL = resolveBaseUrl();
 
 export async function apiFetch<T>(
   path: string,
-  init?: RequestInit
+  init?: RequestInit,
+  /** Clerk session JWT; when provided, sent as a Bearer token for protected
+   *  endpoints. Guest (unauthenticated) requests simply omit it. */
+  token?: string | null
 ): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init?.headers ?? {}),
     },
   });

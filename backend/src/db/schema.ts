@@ -98,3 +98,26 @@ export type Product = typeof products.$inferSelect;
 export type NewProduct = typeof products.$inferInsert;
 export type Variant = typeof variants.$inferSelect;
 export type NewVariant = typeof variants.$inferInsert;
+
+/**
+ * Application users, keyed by the Clerk `userId` (a string, not a serial). Rows
+ * are written by the Clerk webhook (`user.created` / `user.updated`) — Clerk is
+ * the source of truth for identity, so there is no local password or signup. The
+ * `email` is stored lowercased; a later slice (#12) claims past guest orders by
+ * matching this email, so it is indexed.
+ */
+export const users = pgTable(
+  "users",
+  {
+    id: text("id").primaryKey(),
+    email: text("email").notNull(),
+    name: text("name"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("users_email_idx").on(t.email)]
+);
+
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
