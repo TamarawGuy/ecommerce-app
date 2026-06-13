@@ -5,6 +5,7 @@ import { healthRouter } from "./routes/health.routes.js";
 import { categoriesRouter } from "./routes/categories.routes.js";
 import { productsRouter } from "./routes/products.routes.js";
 import { meRouter } from "./routes/me.routes.js";
+import { wishlistRouter } from "./routes/wishlist.routes.js";
 import { webhooksRouter } from "./routes/webhooks.routes.js";
 
 export function createApp() {
@@ -27,6 +28,7 @@ export function createApp() {
   app.use("/categories", categoriesRouter);
   app.use("/products", productsRouter);
   app.use("/me", meRouter);
+  app.use("/wishlist", wishlistRouter);
 
   // Fallback 404
   app.use((_req, res) => {

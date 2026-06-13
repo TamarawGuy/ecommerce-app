@@ -3,6 +3,7 @@ import { Tabs } from "expo-router";
 import { useColorScheme } from "react-native";
 
 import { useCart } from "@/src/context/CartContext";
+import { useWishlist } from "@/src/context/WishlistContext";
 
 // Navigation chrome needs raw color values (not Tailwind classes), so we mirror
 // the design tokens here and pick by system scheme to stay in sync with theming.
@@ -25,6 +26,7 @@ export default function TabsLayout() {
   const scheme = useColorScheme() ?? "light";
   const c = chrome[scheme === "dark" ? "dark" : "light"];
   const { count } = useCart();
+  const { items: wishlistItems } = useWishlist();
 
   return (
     <Tabs
@@ -60,6 +62,7 @@ export default function TabsLayout() {
         name="wishlist"
         options={{
           title: "Wishlist",
+          tabBarBadge: wishlistItems.length > 0 ? wishlistItems.length : undefined,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="heart-outline" color={color} size={size} />
           ),

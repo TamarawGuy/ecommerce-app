@@ -13,6 +13,7 @@ import {
 } from "react-native";
 
 import { useCart } from "@/src/context/CartContext";
+import { useWishlist } from "@/src/context/WishlistContext";
 import { useProduct } from "@/src/hooks/useProducts";
 import { formatPrice } from "@/src/lib/format";
 import { sizedImage } from "@/src/lib/images";
@@ -24,8 +25,8 @@ import {
 // Icons/swatches need raw color values (not Tailwind classes); mirror the design
 // tokens and pick by system scheme.
 const chrome = {
-  light: { muted: "#6b7280", accent: "#111827", ring: "#111827", border: "#e5e7eb" },
-  dark: { muted: "#a3a3a3", accent: "#f5f5f5", ring: "#f5f5f5", border: "#404040" },
+  light: { muted: "#6b7280", accent: "#111827", ring: "#111827", border: "#e5e7eb", danger: "#dc2626" },
+  dark: { muted: "#a3a3a3", accent: "#f5f5f5", ring: "#f5f5f5", border: "#404040", danger: "#f87171" },
 };
 
 /**
@@ -39,6 +40,7 @@ export function ProductDetailScreen() {
   const c = chrome[scheme];
 
   const { addItem } = useCart();
+  const { isWishlisted, toggle: toggleWishlist } = useWishlist();
 
   const { data: product, isLoading, isError, refetch } = useProduct(Number(id));
   // In-progress {size, color} selection. A single-variant product collapses and
@@ -125,16 +127,58 @@ export function ProductDetailScreen() {
     addedTimer.current = setTimeout(() => setJustAdded(false), 1400);
   }
 
+  // The heart wishlists the *displayed* variant (the resolved one, or the first
+  // before a multi-variant choice is made) — wishlist rows are variant-keyed,
+  // matching cart and orders. The toggle is optimistic (see WishlistContext).
+  const wishlistVariant = resolved.variant ?? product.variants[0] ?? null;
+  const wishlisted = wishlistVariant
+    ? isWishlisted(wishlistVariant.id)
+    : false;
+
+  function onToggleWishlist() {
+    if (!wishlistVariant) return;
+    toggleWishlist({
+      variantId: wishlistVariant.id,
+      productId: product!.id,
+      name: product!.name,
+      size: wishlistVariant.size,
+      colorName: wishlistVariant.colorName,
+      colorHex: wishlistVariant.colorHex,
+      priceCents: wishlistVariant.priceCents,
+      imageUrl: wishlistVariant.imageUrl,
+      inStock: wishlistVariant.stock > 0,
+    });
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }
+
   return (
     <View className="flex-1 bg-background">
       <Stack.Screen options={{ title: product.name }} />
       <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
-        <Image
-          source={sizedImage(heroBase, 1080, 80)}
-          style={{ width: "100%", aspectRatio: 1 }}
-          contentFit="cover"
-          transition={200}
-        />
+        <View className="relative">
+          <Image
+            source={sizedImage(heroBase, 1080, 80)}
+            style={{ width: "100%", aspectRatio: 1 }}
+            contentFit="cover"
+            transition={200}
+          />
+          <Pressable
+            onPress={onToggleWishlist}
+            disabled={!wishlistVariant}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={
+              wishlisted ? "Remove from wishlist" : "Add to wishlist"
+            }
+            className="absolute right-4 top-4 h-11 w-11 items-center justify-center rounded-full bg-background/80 active:opacity-80"
+          >
+            <Ionicons
+              name={wishlisted ? "heart" : "heart-outline"}
+              size={24}
+              color={wishlisted ? c.danger : c.accent}
+            />
+          </Pressable>
+        </View>
 
         <View className="px-5 pt-4">
           <Text className="text-2xl font-bold text-foreground">{product.name}</Text>
