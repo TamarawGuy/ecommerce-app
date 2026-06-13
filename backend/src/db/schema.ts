@@ -6,6 +6,7 @@ import {
   boolean,
   index,
   integer,
+  jsonb,
   pgTable,
   serial,
   text,
@@ -203,3 +204,95 @@ export const addresses = pgTable(
 
 export type Address = typeof addresses.$inferSelect;
 export type NewAddress = typeof addresses.$inferInsert;
+
+/**
+ * The shipping address snapshotted onto an order. Unlike `addresses` (mutable,
+ * per-user, and only for signed-in users), this is a frozen copy captured at
+ * checkout — guests have no saved address, and even a signed-in buyer may later
+ * edit or delete the saved address the order shipped to, so the order keeps its
+ * own immutable copy. Stored as `jsonb` rather than columns because it is never
+ * queried, only read back whole.
+ */
+export interface ShippingAddress {
+  name: string;
+  line1: string;
+  line2: string | null;
+  city: string;
+  state: string;
+  postal: string;
+  country: string;
+  phone: string | null;
+}
+
+/**
+ * An order. Guest-first, so `userId` is nullable — a guest checks out with just
+ * an email + shipping address; #12 later claims unclaimed orders onto an account
+ * by matching this (lowercased) email, which is why it is indexed. `status` is
+ * the lifecycle: `pending` at creation (PaymentIntent not yet succeeded), then
+ * `paid` (the `payment_intent.succeeded` webhook is the **sole** authority on
+ * this) or `cancelled` (stock ran out at fulfillment).
+ *
+ * `totalCents` is the server-recomputed authoritative total (the client never
+ * sends prices), and equals the amount charged on the PaymentIntent. The unique
+ * index on `stripePaymentIntentId` is the **idempotency key**: a re-delivered
+ * webhook resolves to the same order row, and fulfillment runs under a row lock
+ * + status check so it decrements stock exactly once. `needsRefund` flags the
+ * rare oversell case — payment succeeded but stock was gone, so the order is
+ * `cancelled` and owes the buyer a refund.
+ */
+export const orders = pgTable(
+  "orders",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id"),
+    email: text("email").notNull(),
+    shippingAddress: jsonb("shipping_address")
+      .$type<ShippingAddress>()
+      .notNull(),
+    status: text("status").notNull().default("pending"),
+    totalCents: integer("total_cents").notNull(),
+    stripePaymentIntentId: text("stripe_payment_intent_id"),
+    needsRefund: boolean("needs_refund").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("orders_user_id_idx").on(t.userId),
+    index("orders_email_idx").on(t.email),
+    // Idempotency key for the Stripe webhook. A unique index allows many NULLs
+    // (Postgres treats NULLs as distinct), so an order can exist briefly before
+    // its PaymentIntent id is set, while any real id can map to only one order.
+    uniqueIndex("orders_stripe_payment_intent_id_uq").on(
+      t.stripePaymentIntentId
+    ),
+  ]
+);
+
+export type Order = typeof orders.$inferSelect;
+export type NewOrder = typeof orders.$inferInsert;
+
+/**
+ * A line on an order, referencing a **variant** (never a bare product) like
+ * cart and wishlist, so every flow has one code path. `unitPriceCents` is a
+ * snapshot of the variant's price at purchase: re-pricing the catalog later
+ * never alters a historical order's total. `qty` is the quantity bought.
+ */
+export const orderItems = pgTable(
+  "order_items",
+  {
+    id: serial("id").primaryKey(),
+    orderId: integer("order_id")
+      .notNull()
+      .references((): AnyPgColumn => orders.id, { onDelete: "cascade" }),
+    variantId: integer("variant_id")
+      .notNull()
+      .references((): AnyPgColumn => variants.id),
+    qty: integer("qty").notNull(),
+    unitPriceCents: integer("unit_price_cents").notNull(),
+  },
+  (t) => [index("order_items_order_id_idx").on(t.orderId)]
+);
+
+export type OrderItem = typeof orderItems.$inferSelect;
+export type NewOrderItem = typeof orderItems.$inferInsert;

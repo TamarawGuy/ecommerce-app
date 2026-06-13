@@ -1,8 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import { useRouter } from "expo-router";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Pressable,
   Text,
@@ -32,6 +32,7 @@ function variantLabel(item: CartItem): string {
 export default function CartScreen() {
   const scheme = useColorScheme() === "dark" ? "dark" : "light";
   const c = chrome[scheme];
+  const router = useRouter();
   const { items, totalCents, count, hydrated, setQty, removeItem } = useCart();
 
   // Hold the screen blank-but-stable until the saved cart is read, so a returning
@@ -73,9 +74,7 @@ export default function CartScreen() {
       />
       <Summary
         totalCents={totalCents}
-        onCheckout={() =>
-          Alert.alert("Checkout", "Checkout is coming in a later update.")
-        }
+        onCheckout={() => router.push("/checkout")}
       />
     </SafeAreaView>
   );
