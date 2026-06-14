@@ -118,6 +118,18 @@ function AccountCard() {
       </View>
 
       <Pressable
+        onPress={() => router.push("/orders")}
+        accessibilityRole="button"
+        className="flex-row items-center gap-3 rounded-2xl border border-border bg-card p-4 active:opacity-80"
+      >
+        <Ionicons name="receipt-outline" size={20} color={colors.foreground} />
+        <Text className="flex-1 text-base font-medium text-foreground">
+          Order history
+        </Text>
+        <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+      </Pressable>
+
+      <Pressable
         onPress={() => router.push("/addresses")}
         accessibilityRole="button"
         className="flex-row items-center gap-3 rounded-2xl border border-border bg-card p-4 active:opacity-80"

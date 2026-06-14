@@ -59,6 +59,9 @@ export default function RootLayout() {
                       {/* Saved-addresses flow, pushed from the Profile tab. Its
                           own stack renders the header (list + add/edit form). */}
                       <Stack.Screen name="addresses" />
+                      {/* Order-history flow, pushed from the Profile tab. Its
+                          own stack renders the header (the list screen). */}
+                      <Stack.Screen name="orders" />
                       {/* Full-screen checkout (address → payment → success),
                           pushed from the cart. Its own stack; no tab bar. */}
                       <Stack.Screen name="checkout" />
